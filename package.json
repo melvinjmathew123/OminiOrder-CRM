@@ -1,0 +1,30 @@
+{
+  "name": "mini-order-management-crm",
+  "version": "1.0.0",
+  "description": "Mini Order Management CRM integrating Shopify Admin API, Webhook Sync, and PostgreSQL via Prisma",
+  "private": true,
+  "scripts": {
+    "start:backend": "npm --prefix backend run start:dev",
+    "start:frontend": "npm --prefix frontend run dev",
+    "build:backend": "npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm run build:backend && npm run build:frontend",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "prisma:generate": "npm --prefix backend run prisma generate",
+    "prisma:migrate": "npx --prefix backend prisma migrate deploy",
+    "prisma:studio": "npx --prefix backend prisma studio"
+  },
+  "keywords": [
+    "shopify",
+    "crm",
+    "nestjs",
+    "react",
+    "postgresql",
+    "prisma",
+    "webhooks",
+    "order-management"
+  ],
+  "author": "",
+  "license": "MIT"
+}

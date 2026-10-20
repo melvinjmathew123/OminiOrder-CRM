@@ -1,0 +1,99 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Order {
+  id                String           @id @default(uuid())
+  shopifyOrderId    String           @unique
+  orderNumber       String
+  customerName      String
+  customerEmail     String?
+  customerPhone     String?
+  financialStatus   String           @default("pending") // paid, pending, refunded, authorized, voided
+  fulfillmentStatus String           @default("unfulfilled") // fulfilled, unfulfilled, partial, restocked
+  currency          String           @default("USD")
+  totalPrice        Float
+  subtotalPrice     Float
+  totalTax          Float            @default(0)
+  totalDiscounts    Float            @default(0)
+  orderDate         DateTime
+  shopifyUpdatedAt  DateTime?
+  notes             String?
+  tags              String?
+  source            String           @default("SHOPIFY") // SHOPIFY, WEBHOOK, CRM
+  rawPayload        String?          @db.Text
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  items             LineItem[]
+  shippingAddress   ShippingAddress?
+
+  @@index([orderNumber])
+  @@index([customerName])
+  @@index([customerEmail])
+  @@index([financialStatus])
+  @@index([fulfillmentStatus])
+  @@index([orderDate])
+}
+
+model LineItem {
+  id                String   @id @default(uuid())
+  orderId           String
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  shopifyLineItemId String?
+  title             String
+  variantTitle      String?
+  sku               String?
+  quantity          Int      @default(1)
+  price             Float
+  totalDiscount     Float    @default(0)
+  vendor            String?
+  createdAt         DateTime @default(now())
+
+  @@index([orderId])
+}
+
+model ShippingAddress {
+  id        String  @id @default(uuid())
+  orderId   String  @unique
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  name      String?
+  address1  String?
+  address2  String?
+  city      String?
+  province  String?
+  zip       String?
+  country   String?
+  phone     String?
+}
+
+model WebhookLog {
+  id             String   @id @default(uuid())
+  webhookId      String?  @unique
+  topic          String
+  shopifyOrderId String?
+  status         String   // PROCESSED, DUPLICATE, FAILED
+  details        String?
+  receivedAt     DateTime @default(now())
+
+  @@index([webhookId])
+  @@index([shopifyOrderId])
+  @@index([receivedAt])
+}
+
+model SyncLog {
+  id            String    @id @default(uuid())
+  status        String    // SUCCESS, FAILED, RUNNING
+  trigger       String    @default("MANUAL") // MANUAL, CRON, SIMULATED
+  ordersFetched Int       @default(0)
+  ordersCreated Int       @default(0)
+  ordersUpdated Int       @default(0)
+  error         String?
+  startedAt     DateTime  @default(now())
+  completedAt   DateTime?
+}

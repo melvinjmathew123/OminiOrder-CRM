@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mom_crm_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mom_crm
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mom_crm_backend
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/mom_crm?schema=public
+      SHOPIFY_SHOP_DOMAIN: ${SHOPIFY_SHOP_DOMAIN:-}
+      SHOPIFY_ADMIN_ACCESS_TOKEN: ${SHOPIFY_ADMIN_ACCESS_TOKEN:-}
+      SHOPIFY_API_VERSION: ${SHOPIFY_API_VERSION:-2024-01}
+      SHOPIFY_WEBHOOK_SECRET: ${SHOPIFY_WEBHOOK_SECRET:-}
+    ports:
+      - '4000:4000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mom_crm_frontend
+    restart: always
+    ports:
+      - '80:80'
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
